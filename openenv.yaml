@@ -1,0 +1,6 @@
+spec_version: "0.1"
+name: "support-ticket-triage"
+description: "A real-world OpenEnv environment for email and support-ticket triage."
+entrypoint: "app.main:app"
+runtime: "python"
+port: 7860
