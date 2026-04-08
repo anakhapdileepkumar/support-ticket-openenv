@@ -11,11 +11,22 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
 env = SupportTicketEnv()
 
 
 class ResetRequest(BaseModel):
     difficulty: DifficultyLevel
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "Support Ticket Triage OpenEnv is running",
+        "health": "/health",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+    }
 
 
 @app.get("/health")
