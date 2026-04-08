@@ -1,10 +1,18 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "support-ticket-openenv"
 version = "0.1.0"
-description = "Support Ticket Triage OpenEnv API"
-authors = [{ name = "Anakha" }]
+description = "Support Ticket Triage OpenEnv"
+requires-python = ">=3.10"
 dependencies = [
-    "fastapi",
-    "uvicorn",
-    "pydantic"
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "openenv-core>=0.2.0"
 ]
+
+[project.scripts]
+server = "app.main:server"
