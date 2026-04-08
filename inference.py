@@ -117,8 +117,14 @@ def run_task(env, difficulty, task_name):
             flush=True,
         )
 
-        score = max(0.0, min(1.0, reward))
-        success = score > 0.0
+        if reward <= 0:
+            score = 0.01
+        elif reward >= 1:
+            score = 0.99
+        else:
+            score = reward
+
+        success = score > 0
 
     except Exception:
         success = False
