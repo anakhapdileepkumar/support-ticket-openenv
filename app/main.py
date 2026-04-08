@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -16,7 +18,7 @@ env = SupportTicketEnv()
 
 
 class ResetRequest(BaseModel):
-    difficulty: DifficultyLevel
+    difficulty: Optional[DifficultyLevel] = DifficultyLevel.EASY
 
 
 @app.get("/")
@@ -35,8 +37,12 @@ def health():
 
 
 @app.post("/reset")
-def reset_env(request: ResetRequest):
-    result = env.reset(request.difficulty)
+def reset_env(request: Optional[ResetRequest] = None):
+    difficulty = DifficultyLevel.EASY
+    if request is not None and request.difficulty is not None:
+        difficulty = request.difficulty
+
+    result = env.reset(difficulty)
     return result.model_dump()
 
 
