@@ -1,0 +1,10 @@
+[project]
+name = "support-ticket-openenv"
+version = "0.1.0"
+description = "Support Ticket Triage OpenEnv API"
+authors = [{ name = "Anakha" }]
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic"
+]
