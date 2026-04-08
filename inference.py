@@ -35,6 +35,14 @@ def llm_ping(prompt: str):
     )
 
 
+def normalize_score(value: float) -> float:
+    if value <= 0:
+        return 0.01
+    if value >= 1:
+        return 0.99
+    return float(value)
+
+
 def run_task(env, difficulty, task_name):
     print(f"[START] task={task_name} env=support_ticket model={MODEL_NAME}", flush=True)
 
@@ -44,7 +52,7 @@ def run_task(env, difficulty, task_name):
     steps = 0
     done = False
     success = False
-    score = 0.0
+    score = 0.01
 
     try:
         llm_ping("Classify ticket")
@@ -64,7 +72,7 @@ def run_task(env, difficulty, task_name):
             )
         )
         steps += 1
-        reward = r.reward
+        reward = float(r.reward or 0.0)
         done = r.done
         rewards.append(reward)
 
@@ -85,7 +93,7 @@ def run_task(env, difficulty, task_name):
                 )
             )
             steps += 1
-            reward = r.reward
+            reward = float(r.reward or 0.0)
             done = r.done
             rewards.append(reward)
 
@@ -97,7 +105,7 @@ def run_task(env, difficulty, task_name):
         if difficulty == DifficultyLevel.HARD:
             r = env.step(AgentAction(type=ActionType.MARK_SPAM, spam=True))
             steps += 1
-            reward = r.reward
+            reward = float(r.reward or 0.0)
             done = r.done
             rewards.append(reward)
 
@@ -108,7 +116,7 @@ def run_task(env, difficulty, task_name):
 
         r = env.step(AgentAction(type=ActionType.SUBMIT))
         steps += 1
-        reward = r.reward
+        reward = float(r.reward or 0.0)
         done = r.done
         rewards.append(reward)
 
@@ -117,20 +125,14 @@ def run_task(env, difficulty, task_name):
             flush=True,
         )
 
-        if reward <= 0:
-            score = 0.01
-        elif reward >= 1:
-            score = 0.99
-        else:
-            score = reward
-
-        success = score > 0
+        score = normalize_score(reward)
+        success = True
 
     except Exception:
+        score = 0.01
         success = False
-        score = 0.0
 
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    rewards_str = ",".join(f"{x:.2f}" for x in rewards)
 
     print(
         f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
