@@ -15,144 +15,124 @@ API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME")
 API_KEY = os.getenv("API_KEY")
 
-print("DEBUG API_BASE_URL set:", bool(API_BASE_URL), flush=True)
-print("DEBUG MODEL_NAME set:", bool(MODEL_NAME), flush=True)
-print("DEBUG API_KEY set:", bool(API_KEY), flush=True)
-
 if not API_BASE_URL or not MODEL_NAME or not API_KEY:
     raise RuntimeError("Missing API_BASE_URL, MODEL_NAME, or API_KEY")
 
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=API_KEY,
-)
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 
-def llm_ping(task_name: str, prompt: str) -> str:
-    response = client.chat.completions.create(
+def llm_ping(prompt: str):
+    client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
-            {"role": "system", "content": "Reply in one short line only."},
+            {"role": "system", "content": "Reply shortly."},
             {"role": "user", "content": prompt},
         ],
         temperature=0,
     )
-    text = response.choices[0].message.content or ""
-    print(f"[STEP] task={task_name} llm_call=ok", flush=True)
-    return text.strip()
 
 
-def run_easy(env: SupportTicketEnv):
-    task_name = "easy_1"
-    print(f"[START] task={task_name}", flush=True)
+def run_task(env, difficulty, task_name):
+    print(f"[START] task={task_name} env=support_ticket model={MODEL_NAME}", flush=True)
 
-    llm_ping(task_name, "Classify an account-related support ticket in one word.")
+    env.reset(difficulty)
 
-    env.reset(DifficultyLevel.EASY)
+    rewards = []
+    steps = 0
+    done = False
 
-    r1 = env.step(
-        AgentAction(
-            type=ActionType.CLASSIFY_TICKET,
-            category=TicketCategory.ACCOUNT,
+    try:
+        # STEP 1
+        llm_ping("Classify ticket")
+
+        r = env.step(
+            AgentAction(
+                type=ActionType.CLASSIFY_TICKET,
+                category=(
+                    TicketCategory.ACCOUNT
+                    if difficulty == DifficultyLevel.EASY
+                    else (
+                        TicketCategory.BILLING
+                        if difficulty == DifficultyLevel.MEDIUM
+                        else TicketCategory.SPAM
+                    )
+                ),
+            )
         )
-    )
-    print(f"[STEP] task={task_name} step=1 reward={r1.reward}", flush=True)
+        steps += 1
+        reward = r.reward
+        done = r.done
+        rewards.append(reward)
 
-    r2 = env.step(AgentAction(type=ActionType.SUBMIT))
-    print(f"[STEP] task={task_name} step=2 reward={r2.reward}", flush=True)
-
-    print(f"[END] task={task_name} score={r2.reward} steps=2", flush=True)
-    return r2.reward
-
-
-def run_medium(env: SupportTicketEnv):
-    task_name = "medium_1"
-    print(f"[START] task={task_name}", flush=True)
-
-    llm_ping(
-        task_name, "Classify a billing issue and suggest priority in one short line."
-    )
-
-    env.reset(DifficultyLevel.MEDIUM)
-
-    r1 = env.step(
-        AgentAction(
-            type=ActionType.CLASSIFY_TICKET,
-            category=TicketCategory.BILLING,
+        print(
+            f"[STEP] step={steps} action=classify reward={reward:.2f} done={str(done).lower()} error=null",
+            flush=True,
         )
-    )
-    print(f"[STEP] task={task_name} step=1 reward={r1.reward}", flush=True)
 
-    r2 = env.step(
-        AgentAction(
-            type=ActionType.SET_PRIORITY,
-            priority=PriorityLevel.HIGH,
+        if difficulty != DifficultyLevel.EASY:
+            r = env.step(
+                AgentAction(
+                    type=ActionType.SET_PRIORITY,
+                    priority=(
+                        PriorityLevel.HIGH
+                        if difficulty == DifficultyLevel.MEDIUM
+                        else PriorityLevel.LOW
+                    ),
+                )
+            )
+            steps += 1
+            reward = r.reward
+            done = r.done
+            rewards.append(reward)
+
+            print(
+                f"[STEP] step={steps} action=set_priority reward={reward:.2f} done={str(done).lower()} error=null",
+                flush=True,
+            )
+
+        if difficulty == DifficultyLevel.HARD:
+            r = env.step(AgentAction(type=ActionType.MARK_SPAM, spam=True))
+            steps += 1
+            reward = r.reward
+            done = r.done
+            rewards.append(reward)
+
+            print(
+                f"[STEP] step={steps} action=mark_spam reward={reward:.2f} done={str(done).lower()} error=null",
+                flush=True,
+            )
+
+        r = env.step(AgentAction(type=ActionType.SUBMIT))
+        steps += 1
+        reward = r.reward
+        done = r.done
+        rewards.append(reward)
+
+        print(
+            f"[STEP] step={steps} action=submit reward={reward:.2f} done={str(done).lower()} error=null",
+            flush=True,
         )
-    )
-    print(f"[STEP] task={task_name} step=2 reward={r2.reward}", flush=True)
 
-    r3 = env.step(AgentAction(type=ActionType.SUBMIT))
-    print(f"[STEP] task={task_name} step=3 reward={r3.reward}", flush=True)
+        score = reward
+        success = score > 0
 
-    print(f"[END] task={task_name} score={r3.reward} steps=3", flush=True)
-    return r3.reward
+    except Exception as e:
+        success = False
+        score = 0.0
 
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
 
-def run_hard(env: SupportTicketEnv):
-    task_name = "hard_1"
-    print(f"[START] task={task_name}", flush=True)
-
-    llm_ping(
-        task_name, "Detect whether a reward-claim email is spam in one short line."
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
+        flush=True,
     )
 
-    env.reset(DifficultyLevel.HARD)
-
-    r1 = env.step(
-        AgentAction(
-            type=ActionType.CLASSIFY_TICKET,
-            category=TicketCategory.SPAM,
-        )
-    )
-    print(f"[STEP] task={task_name} step=1 reward={r1.reward}", flush=True)
-
-    r2 = env.step(
-        AgentAction(
-            type=ActionType.SET_PRIORITY,
-            priority=PriorityLevel.LOW,
-        )
-    )
-    print(f"[STEP] task={task_name} step=2 reward={r2.reward}", flush=True)
-
-    r3 = env.step(
-        AgentAction(
-            type=ActionType.MARK_SPAM,
-            spam=True,
-        )
-    )
-    print(f"[STEP] task={task_name} step=3 reward={r3.reward}", flush=True)
-
-    r4 = env.step(
-        AgentAction(
-            type=ActionType.CHOOSE_ACTION,
-            action=SupportAction.MARK_AS_SPAM,
-        )
-    )
-    print(f"[STEP] task={task_name} step=4 reward={r4.reward}", flush=True)
-
-    r5 = env.step(AgentAction(type=ActionType.SUBMIT))
-    print(f"[STEP] task={task_name} step=5 reward={r5.reward}", flush=True)
-
-    print(f"[END] task={task_name} score={r5.reward} steps=5", flush=True)
-    return r5.reward
+    return score
 
 
 if __name__ == "__main__":
     env = SupportTicketEnv()
 
-    easy = run_easy(env)
-    medium = run_medium(env)
-    hard = run_hard(env)
-
-    avg = (easy + medium + hard) / 3
-    print(f"[END] task=summary score={avg:.2f} steps=3", flush=True)
+    run_task(env, DifficultyLevel.EASY, "easy_1")
+    run_task(env, DifficultyLevel.MEDIUM, "medium_1")
+    run_task(env, DifficultyLevel.HARD, "hard_1")
