@@ -10,34 +10,98 @@ from app.models import (
 
 
 def run_easy(env: SupportTicketEnv):
+    task_name = "easy_1"
+    print(f"[START] task={task_name}", flush=True)
+
     env.reset(DifficultyLevel.EASY)
-    env.step(
-        AgentAction(type=ActionType.CLASSIFY_TICKET, category=TicketCategory.ACCOUNT)
+
+    result1 = env.step(
+        AgentAction(
+            type=ActionType.CLASSIFY_TICKET,
+            category=TicketCategory.ACCOUNT,
+        )
     )
-    result = env.step(AgentAction(type=ActionType.SUBMIT))
-    return result.reward
+    print(f"[STEP] step=1 reward={result1.reward}", flush=True)
+
+    result2 = env.step(AgentAction(type=ActionType.SUBMIT))
+    print(f"[STEP] step=2 reward={result2.reward}", flush=True)
+
+    print(f"[END] task={task_name} score={result2.reward} steps=2", flush=True)
+    return result2.reward
 
 
 def run_medium(env: SupportTicketEnv):
+    task_name = "medium_1"
+    print(f"[START] task={task_name}", flush=True)
+
     env.reset(DifficultyLevel.MEDIUM)
-    env.step(
-        AgentAction(type=ActionType.CLASSIFY_TICKET, category=TicketCategory.BILLING)
+
+    result1 = env.step(
+        AgentAction(
+            type=ActionType.CLASSIFY_TICKET,
+            category=TicketCategory.BILLING,
+        )
     )
-    env.step(AgentAction(type=ActionType.SET_PRIORITY, priority=PriorityLevel.HIGH))
-    result = env.step(AgentAction(type=ActionType.SUBMIT))
-    return result.reward
+    print(f"[STEP] step=1 reward={result1.reward}", flush=True)
+
+    result2 = env.step(
+        AgentAction(
+            type=ActionType.SET_PRIORITY,
+            priority=PriorityLevel.HIGH,
+        )
+    )
+    print(f"[STEP] step=2 reward={result2.reward}", flush=True)
+
+    result3 = env.step(AgentAction(type=ActionType.SUBMIT))
+    print(f"[STEP] step=3 reward={result3.reward}", flush=True)
+
+    print(f"[END] task={task_name} score={result3.reward} steps=3", flush=True)
+    return result3.reward
 
 
 def run_hard(env: SupportTicketEnv):
+    task_name = "hard_1"
+    print(f"[START] task={task_name}", flush=True)
+
     env.reset(DifficultyLevel.HARD)
-    env.step(AgentAction(type=ActionType.CLASSIFY_TICKET, category=TicketCategory.SPAM))
-    env.step(AgentAction(type=ActionType.SET_PRIORITY, priority=PriorityLevel.LOW))
-    env.step(AgentAction(type=ActionType.MARK_SPAM, spam=True))
-    env.step(
-        AgentAction(type=ActionType.CHOOSE_ACTION, action=SupportAction.MARK_AS_SPAM)
+
+    result1 = env.step(
+        AgentAction(
+            type=ActionType.CLASSIFY_TICKET,
+            category=TicketCategory.SPAM,
+        )
     )
-    result = env.step(AgentAction(type=ActionType.SUBMIT))
-    return result.reward
+    print(f"[STEP] step=1 reward={result1.reward}", flush=True)
+
+    result2 = env.step(
+        AgentAction(
+            type=ActionType.SET_PRIORITY,
+            priority=PriorityLevel.LOW,
+        )
+    )
+    print(f"[STEP] step=2 reward={result2.reward}", flush=True)
+
+    result3 = env.step(
+        AgentAction(
+            type=ActionType.MARK_SPAM,
+            spam=True,
+        )
+    )
+    print(f"[STEP] step=3 reward={result3.reward}", flush=True)
+
+    result4 = env.step(
+        AgentAction(
+            type=ActionType.CHOOSE_ACTION,
+            action=SupportAction.MARK_AS_SPAM,
+        )
+    )
+    print(f"[STEP] step=4 reward={result4.reward}", flush=True)
+
+    result5 = env.step(AgentAction(type=ActionType.SUBMIT))
+    print(f"[STEP] step=5 reward={result5.reward}", flush=True)
+
+    print(f"[END] task={task_name} score={result5.reward} steps=5", flush=True)
+    return result5.reward
 
 
 if __name__ == "__main__":
@@ -47,7 +111,7 @@ if __name__ == "__main__":
     medium_score = run_medium(env)
     hard_score = run_hard(env)
 
-    print("Baseline Results")
-    print(f"Easy Score:   {easy_score:.2f}")
-    print(f"Medium Score: {medium_score:.2f}")
-    print(f"Hard Score:   {hard_score:.2f}")
+    print(
+        f"[END] task=summary score={(easy_score + medium_score + hard_score) / 3:.2f} steps=3",
+        flush=True,
+    )
