@@ -5,8 +5,12 @@ from app.env import SupportTicketEnv
 from app.models import AgentAction, DifficultyLevel
 
 
-app = FastAPI(title="Support Ticket Triage OpenEnv")
-
+app = FastAPI(
+    title="Support Ticket Triage OpenEnv",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
 env = SupportTicketEnv()
 
 
