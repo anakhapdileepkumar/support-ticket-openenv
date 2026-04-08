@@ -1,3 +1,12 @@
+---
+title: Support Ticket Openenv
+emoji: 👀
+colorFrom: yellow
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
 # Support Ticket Triage OpenEnv
 
 A real-world OpenEnv environment where an AI agent performs email and support-ticket triage.
@@ -87,3 +96,5 @@ Scores range from **0.0 to 1.0**
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
+=======
+
