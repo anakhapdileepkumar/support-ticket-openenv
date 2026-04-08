@@ -11,14 +11,17 @@ from app.models import (
     SupportAction,
 )
 
-API_BASE_URL = os.getenv("API_BASE_URL")
-MODEL_NAME = os.getenv("MODEL_NAME")
-API_KEY = os.getenv("API_KEY")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-if not API_BASE_URL or not MODEL_NAME or not API_KEY:
-    raise RuntimeError("Missing API_BASE_URL, MODEL_NAME, or API_KEY")
+if not HF_TOKEN:
+    raise RuntimeError("Missing HF_TOKEN")
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=HF_TOKEN,
+)
 
 
 def llm_ping(prompt: str):
@@ -40,9 +43,10 @@ def run_task(env, difficulty, task_name):
     rewards = []
     steps = 0
     done = False
+    success = False
+    score = 0.0
 
     try:
-        # STEP 1
         llm_ping("Classify ticket")
 
         r = env.step(
@@ -113,10 +117,10 @@ def run_task(env, difficulty, task_name):
             flush=True,
         )
 
-        score = reward
-        success = score > 0
+        score = max(0.0, min(1.0, reward))
+        success = score > 0.0
 
-    except Exception as e:
+    except Exception:
         success = False
         score = 0.0
 
